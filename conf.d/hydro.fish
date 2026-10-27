@@ -31,24 +31,24 @@ function _hydro_pwd --on-variable PWD --on-variable hydro_ignored_git_paths --on
     )
 end
 
-function _hydro_who
+function _hydro_who --on-variable USER --on-variable hostname --on-variable hydro_always_show_user
     set --local show_hostname false
     if set --query SSH_CONNECTION
         set show_hostname true
     else
         switch (uname)
-        case Linux
-            if test -f /proc/1/environ && grep -qa container=lxc /proc/1/environ
-                set show_hostname true
-            end
-        case FreeBSD
-            if test "$(sysctl -n security.jail.jailed)" = "1"
-                set show_hostname true
-            end
-        case SunOS
-            if test "$(zonename)" != "global"
-                set show_hostname true
-            end
+            case Linux
+                if test -f /proc/1/environ && grep -qa container=lxc /proc/1/environ
+                    set show_hostname true
+                end
+            case FreeBSD
+                if test "$(sysctl -n security.jail.jailed)" = 1
+                    set show_hostname true
+                end
+            case SunOS
+                if test "$(zonename)" != global
+                    set show_hostname true
+                end
         end
     end
 
@@ -62,7 +62,7 @@ function _hydro_who
     else
         set --global _hydro_who ""
     end
-end
+end && _hydro_who
 
 function _hydro_postexec --on-event fish_postexec
     set --local last_status $pipestatus
@@ -93,7 +93,6 @@ end
 function _hydro_prompt --on-event fish_prompt
     set --query _hydro_status || set --global _hydro_status "$_hydro_newline$_hydro_color_prompt$hydro_symbol_prompt"
     set --query _hydro_pwd || _hydro_pwd
-    set --query _hydro_who || _hydro_who
 
     command kill $_hydro_last_pid 2>/dev/null
 
